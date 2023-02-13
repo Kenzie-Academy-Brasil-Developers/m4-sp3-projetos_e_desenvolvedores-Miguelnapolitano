@@ -1,7 +1,11 @@
 import express, { Application } from 'express';
 import { startDataBase } from './database';
-import { createNewDev, getAllDeveloperById, getAllDevelopers } from './logics/developers.logic'
+import { createNewDev, getAllDeveloperById, getAllDevelopers } from './logics/developers.logics'
 import { chekDevEmail, chekDevID } from './middlewares/developers.middlewares'
+import { createDevInfo } from './logics/devInfo.logics'
+import { checkDevInfoId } from './middlewares/devInfo.middlewares'
+import { createNewProject, insertNewTech } from './logics/projects.logics'
+import { checkDevIdForNewProject, checkProjectId} from './middlewares/projects.middlewares'
 
 
 const app: Application = express();
@@ -16,3 +20,11 @@ app.listen(3000, async () => {
 app.post('/developers', chekDevEmail, createNewDev);
 app.get('/developers', getAllDevelopers);
 app.get('/developers/:id', chekDevID, getAllDeveloperById)
+
+//table: developers_info
+app.post('/developers/:id/infos', chekDevID, checkDevInfoId, createDevInfo);
+
+//talbe: projects
+app.post('/projects', checkDevIdForNewProject, createNewProject);
+app.post('/projects/:id/technologies', checkProjectId, insertNewTech );
+

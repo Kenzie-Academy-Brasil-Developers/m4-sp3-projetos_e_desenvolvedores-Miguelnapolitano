@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction, response } from 'express';
+import { Request, Response, NextFunction} from 'express';
 import { QueryConfig } from 'pg';
 import { client } from '../database';
-import { developerResult, iDeveloper, iDeveloperRequest } from '../interfaces/developers.interfaces';
+import { developerResult } from '../interfaces/developers.interfaces';
 
 const chekDevEmail = async (req: Request, res: Response, next: NextFunction): Promise<Response | void>  => {
     const email: string = req.body.email;
@@ -49,7 +49,7 @@ const chekDevID = async (req: Request, res: Response, next: NextFunction): Promi
     const queryResult: developerResult = await client.query(queryConfig)
 
     if(!queryResult.rows[0]){
-        return res.status(409).json(`Developer ID: ${devId} do not exists.`)
+        return res.status(404).json(`Developer ID: ${devId} do not exists.`)
     }
 
     next()

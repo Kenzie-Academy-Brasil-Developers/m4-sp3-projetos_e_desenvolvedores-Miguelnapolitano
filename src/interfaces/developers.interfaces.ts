@@ -1,4 +1,4 @@
-import { QueryResult } from "pg";
+import { QueryResult } from 'pg';
 
 interface iDeveloperRequest {
     name: string,

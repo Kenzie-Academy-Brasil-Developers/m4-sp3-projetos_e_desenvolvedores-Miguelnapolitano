@@ -89,7 +89,7 @@ const getAllDevelopers = async (req: Request, res:Response): Promise<Response> =
             dev.email AS "developerEmail",
             di.id AS "developerInfoId",
             di."developerSince" AS "developerInfoDeveloperSince",
-            di."preferedOs" AS "developerInfoPreferedOS"
+            di."preferredOS" AS "developerInfopreferredOS"
         FROM 
             developers dev
         LEFT JOIN
@@ -112,7 +112,7 @@ const getAllDeveloperById = async (req: Request, res:Response): Promise<Response
             dev.email AS "developerEmail",
             di.id AS "developerInfoId",
             di."developerSince" AS "developerInfoDeveloperSince",
-            di."preferedOs" AS "developerInfoPreferedOS"
+            di."preferredOS" AS "developerInfopreferredOS"
         FROM 
             developers dev
         LEFT JOIN
