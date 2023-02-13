@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { QueryConfig } from 'pg';
 import format from 'pg-format';
 import { client } from '../database';
-import { developerResult, iDeveloperRequest } from '../interfaces/developers.interfaces';
+import { developerResult, iDeveloperRequest, iDeveloperRequestPatch } from '../interfaces/developers.interfaces';
 
 const validadeRequest = (payload: any): iDeveloperRequest => {
     const requestData: iDeveloperRequest = payload;
@@ -132,21 +132,7 @@ const getAllDeveloperById = async (req: Request, res:Response): Promise<Response
 }
 
 const getAllProjectsByDevId = async (req: Request, res:Response): Promise<Response> => { 
-    // "developerID": 1,
-    // "developerName": "Fabio",
-    // "developerEmail": "fabio.jr@kenzie.com.br",
-    // "developerInfoID": 2,
-    // "developerInfoDeveloperSince": "2013-01-01T02:00:00.000Z",
-    // "developerInfoPreferredOS": "Linux",
-    // "projectID": 1,
-    // "projectName": "Projeto 1",
-    // "projectDescription": "Projeto fullstack",
-    // "projectEstimatedTime": "2 dias",
-    // "projectRepository": "url.com.br",
-    // "projectStartDate": "2023-02-13T03:00:00.000Z",
-    // "projectEndDate": null,
-    // "technologyId": 1,
-    // "technologyName": "JavaScript"
+
     const queryString: string = `
     SELECT 
         dev.id AS "developerID",
@@ -191,4 +177,96 @@ const getAllProjectsByDevId = async (req: Request, res:Response): Promise<Respon
     return res.status(200).json(queryResult.rows)
 }
 
-export { createNewDev, getAllDevelopers, getAllDeveloperById, getAllProjectsByDevId }
+const validatePatchRequest = async (payload: any, res: Response): Promise<Response | iDeveloperRequestPatch | undefined> => {
+    const requestData: iDeveloperRequest = payload;
+
+    const requestKeys: Array<string> = Object.keys(requestData);
+
+    const requiredKeys: Array<string> = ["name", "email"];
+    
+    const requestContainsRequiredKeys: boolean = requiredKeys.some((key: string) => requestKeys.includes(key));
+
+    if (!requestContainsRequiredKeys) {
+        throw new Error('At least one of keys "name" or "email" must be send.')
+    }
+
+    if(requestKeys.includes("email")){
+        const queryString: string =`
+            SELECT * FROM developers WHERE email = $1;
+        `
+
+        const queryConfig: QueryConfig = {
+            text: queryString,
+            values: [requestData.email]
+        }
+
+        const queryResult: developerResult = await client.query(queryConfig)
+
+        if (queryResult.rows){
+            return res.status(404).json('Email alredy exist.')
+        }
+    }
+
+    const requestContainsOnlyRequiredKeys: boolean = requestKeys.every((key: string) => requiredKeys.includes(key));    
+                  
+    if (!requestContainsOnlyRequiredKeys){        
+       if (requestKeys.includes("name") && requestKeys.includes("email")){
+            const patchDev = {
+                name: requestData.name,
+                email: requestData.email,
+            }            
+            return patchDev
+       }else if (requestKeys.includes("name")){
+            const patchDev = {
+                name: requestData.name
+            }
+            return patchDev
+       }else if (requestKeys.includes("email")){
+            const patchDev = {
+                email: requestData.email
+            }
+            return patchDev
+        }
+    return requestData
+}}
+
+const editDeveloper = async (req: Request, res:Response): Promise<Response | undefined> => {
+    try{
+        const requestData = validatePatchRequest(req.body, res);        
+         if( requestData != undefined){
+
+             const queryString: string = format (`
+             UPDATE
+                 developers
+             SET (%I) = ROW(%L)
+             WHERE
+                 id = $1
+             RETURNING *;
+             `,
+             Object.keys(requestData),
+             Object.values(requestData)
+             )
+     
+             const queryConfig: QueryConfig = {
+                 text: queryString,
+                 values: [req.params.id]
+             }
+     
+             const queryResult: developerResult = await client.query(queryConfig)
+     
+             return res.status(200).json(queryResult.rows[0])
+         }
+
+    }catch(error){
+        if(error instanceof Error){
+            return res.status(400).json({
+              message: error.message,
+            });
+    }
+    return res.status(500).json({
+        message: 'Internal server error'
+    })
+}}
+
+
+export { createNewDev, getAllDevelopers, getAllDeveloperById, getAllProjectsByDevId, editDeveloper }

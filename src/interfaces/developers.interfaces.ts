@@ -12,4 +12,10 @@ interface iDeveloper extends iDeveloperRequest {
 
 type developerResult = QueryResult<iDeveloper>;
 
-export { iDeveloperRequest ,iDeveloper, developerResult };
+interface iDeveloperRequestPatch {
+    name?: string | null,
+    email?: string | null,
+    developerInfoId?: number | null
+};
+
+export { iDeveloperRequest ,iDeveloper, developerResult, iDeveloperRequestPatch };
