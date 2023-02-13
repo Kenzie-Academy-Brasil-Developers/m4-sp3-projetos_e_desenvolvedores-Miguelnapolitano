@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { QueryConfig, QueryResult } from 'pg';
 import format from 'pg-format';
 import { client } from '../database';
-import { iInsertTechnologyRequest, insertTechnologyResult, iProjectsRequest, iTechnologyRequest, projectResult, technologyResult } from '../interfaces/projects.interfaces'
+import { iInsertTechnology, iInsertTechnologyRequest, insertTechnologyResult, iPagination, iProjectsRequest, iTechnologyRequest, paginationResult, projectResult, technologyResult } from '../interfaces/projects.interfaces'
 
 const validadeRequestNewProject = (payload: any): iProjectsRequest => {
     const requestData: iProjectsRequest = payload;
@@ -45,7 +45,6 @@ const validadeRequestNewProject = (payload: any): iProjectsRequest => {
     }
     return requestData
 }
-
 
 const createNewProject = async (req: Request, res:Response): Promise<Response> => {
     try{
@@ -141,64 +140,93 @@ const checkTechIsAlredyInsert = async (name: string, projectId: string, res: Res
     const projectHadTech: boolean = TechsInProject.some((tech: any) => tech.technologyId == techId)
 
     if(projectHadTech){
-        return res.status(409).json(`The technology ${name} alredy exist in project ID: ${projectId}`)
+        return true
     }
 
     return false
 }
 
-// const pagination  = async (req: Request, res:Response): Promise<Response> => {
+const createPagination = async (techAdded: iInsertTechnology): Promise<iPagination | any> => {
 
-//     //Fazer a paginação da inserção de tecnologia.
+    const queryString: string = `
+    SELECT 
+        te.id AS "technologyId",
+        te.name AS "technologyName",
+        pr.id AS "projectId", 
+        pr.name AS "projectName",
+        pr.description AS "projectDescription" ,
+        pr."estimatedTime" AS "projectEstimatedTime",
+        pr.repository  AS "projectRepository",
+        pr."startDate" AS "projectStartDate",
+        pr."endDate" AS "projectEndDate"
+    FROM projects_technologies pt
+    JOIN projects_technologies ON pt.id = $1
+    JOIN projects pr ON pr.id = $2
+    JOIN technologies te ON te.id = $3;
+    `
 
-// }
+    const queryConfig: QueryConfig = {
+        text: queryString,
+        values: [techAdded.id, techAdded.projectId, techAdded.technologyId]
+    }
+
+    const queryResult: paginationResult = await client.query(queryConfig)
+
+    return queryResult.rows[0]
+    // const date = queryResultInsert.rows[0].addedIn.toString()
+    // let dataObj = new Date(date);
+    // let dataFormatada = dataObj.getFullYear() + "/" + (dataObj.getMonth() + 1) + "/" + dataObj.getDate();
+
+}
 
 const insertNewTech = async (req: Request, res:Response): Promise<Response> => {
     try{
-        const requestData = validadeRequestNewTech(req.body)
-        const techExistInProject = checkTechIsAlredyInsert(req.body.name, req.params.id, res)
+        const requestData = validadeRequestNewTech(req.body);
+        const techExistInProject = await checkTechIsAlredyInsert(req.body.name, req.params.id, res)
         
-        const queryStringTech: string = `
-            SELECT 
-                *
-            FROM
-                technologies
-            WHERE
-                name = $1
-        `
+        if(!techExistInProject){
 
-        const queryConfigTech: QueryConfig = {
-            text: queryStringTech,
-            values: [requestData.name]
+            const queryStringTech: string = `
+                SELECT 
+                    *
+                FROM
+                    technologies
+                WHERE
+                    name = $1
+            `
+    
+            const queryConfigTech: QueryConfig = {
+                text: queryStringTech,
+                values: [requestData.name]
+            }
+    
+            const queryResultTech: technologyResult = await client.query(queryConfigTech)
+    
+            const newInsert: iInsertTechnologyRequest = {
+                addedIn: new Date().toLocaleDateString(),
+                projectId: Number(req.params.id),
+                technologyId: Number(queryResultTech.rows[0].id)
+            }
+    
+            const queryStringInsert: string = format(`
+                INSERT INTO 
+                    projects_technologies (%I)
+                VALUES
+                    (%L)
+                RETURNING *`,
+                Object.keys(newInsert),
+                Object.values(newInsert)
+                )
+               
+            const queryResultInsert: insertTechnologyResult = await client.query(queryStringInsert);
+
+            const pagination: iPagination = await createPagination(queryResultInsert.rows[0])
+    
+            return res.status(201).json(pagination)
+        }else{
+            return res.status(404).json(`The technology ${requestData.name} alredy exist in project ID: ${req.params.id}`)
         }
 
-        const queryResultTech: technologyResult = await client.query(queryConfigTech)
-
-        const newInsert: iInsertTechnologyRequest = {
-            addedIn: new Date().toLocaleDateString(),
-            projectId: Number(req.params.id),
-            technologyId: Number(queryResultTech.rows[0].id)
-        }
-
-        const queryStringInsert: string = format(`
-            INSERT INTO 
-                projects_technologies (%I)
-            VALUES
-                (%L)
-            RETURNING *`,
-            Object.keys(newInsert),
-            Object.values(newInsert)
-            )
-           
-        const queryResultInsert: insertTechnologyResult = await client.query(queryStringInsert);
-
-
-
-        // const date = queryResultInsert.rows[0].addedIn.toString()
-        // let dataObj = new Date(date);
-        // let dataFormatada = dataObj.getFullYear() + "/" + (dataObj.getMonth() + 1) + "/" + dataObj.getDate();
-
-        return res.status(201).json(queryResultInsert.rows[0])
     }catch(error){
         if (error instanceof Error){
             return res.status(400).json({message: error.message})
@@ -206,4 +234,68 @@ const insertNewTech = async (req: Request, res:Response): Promise<Response> => {
         return res.status(500).json('Internal server error')
     }
 }
-export { createNewProject, insertNewTech }
+
+const getAllProjects = async (req: Request, res:Response): Promise<Response> => {
+
+    const queryString: string = `
+    SELECT 
+        pr.id AS "projectID",
+        pr.name AS "projectName",
+        pr.description AS "projectDescription",
+        pr."estimatedTime" AS "projectEstimatedTime",
+        pr.repository AS "projectRepository",
+        to_char(pr."startDate", 'YYYY/MM/DD') AS "projectStartDate",
+        to_char(pr."endDate", 'YYYY/MM/DD') AS "projectEndDate",
+        pr."developerId" AS "projectDeveloperID",
+        pr."developerId" AS "projectDeveloperID",
+        te.id AS "technologyID",
+        te.name AS "technologyName"
+    FROM
+        projects pr
+    LEFT JOIN
+        projects_technologies pt ON pt."projectId" = pr.id
+    LEFT JOIN
+        technologies te ON te.id = pt."technologyId";
+    `
+    const queryResult = await client.query(queryString)
+
+    return res.status(200).json(queryResult.rows)
+}
+
+const getProjectsById = async (req: Request, res:Response): Promise<Response> => { 
+
+    const queryString: string = `
+    SELECT 
+        pr.id AS "projectID",
+        pr.name AS "projectName",
+        pr.description AS "projectDescription",
+        pr."estimatedTime" AS "projectEstimatedTime",
+        pr.repository AS "projectRepository",
+        to_char(pr."startDate", 'YYYY/MM/DD') AS "projectStartDate",
+        to_char(pr."endDate", 'YYYY/MM/DD') AS "projectEndDate",
+        pr."developerId" AS "projectDeveloperID",
+        pr."developerId" AS "projectDeveloperID",
+        te.id AS "technologyID",
+        te.name AS "technologyName"
+    FROM
+        projects pr
+    LEFT JOIN
+        projects_technologies pt ON pt."projectId" = pr.id
+    LEFT JOIN
+        technologies te ON te.id = pt."technologyId"
+    WHERE
+        pr.id = $1;
+    `
+
+    const queryConfig: QueryConfig = {
+        text: queryString,
+        values:[Number(req.params.id)]
+    }
+
+    const queryResult = await client.query(queryConfig)
+
+    return res.status(200).json(queryResult.rows)
+}
+
+
+export { createNewProject, insertNewTech, getAllProjects, getProjectsById}

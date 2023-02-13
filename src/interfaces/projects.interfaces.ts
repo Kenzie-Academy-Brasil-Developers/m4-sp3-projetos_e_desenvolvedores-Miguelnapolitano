@@ -38,4 +38,18 @@ interface iInsertTechnology extends iInsertTechnologyRequest {
 
 type insertTechnologyResult = QueryResult<iInsertTechnology>
 
-export { iProjectsRequest, projectResult,iTechnologyRequest, technologyResult, iInsertTechnologyRequest, insertTechnologyResult, iInsertTechnology };
+interface iPagination{
+    technologyId: number,
+    technologyName: string,
+    projectId: number
+    projectName: string,
+    projectDescription: string,
+    projectEstimatedTime: string,
+    projectRepository: string,
+    projectStartDate: string,
+    projectEndDate: string
+}
+
+type paginationResult = QueryResult<iPagination>
+
+export { iProjectsRequest, projectResult,iTechnologyRequest, technologyResult, iInsertTechnologyRequest, insertTechnologyResult, iInsertTechnology, iPagination, paginationResult };

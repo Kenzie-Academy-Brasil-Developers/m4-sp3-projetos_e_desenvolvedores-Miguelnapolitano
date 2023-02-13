@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { QueryConfig } from 'pg';
 import { client } from '../database';
-import { projectResult, technologyResult } from '../interfaces/projects.interfaces';
+import { iTechnologyRequest, projectResult, technologyResult } from '../interfaces/projects.interfaces';
 
 
 const checkDevIdForNewProject = async (req: Request, res:Response, next: NextFunction): Promise<Response | void> => {
