@@ -1,6 +1,6 @@
 import express, { Application } from 'express';
 import { startDataBase } from './database';
-import { createNewDev, getAllDeveloperById, getAllDevelopers, getAllProjectsByDevId} from './logics/developers.logics'
+import { createNewDev, editDeveloper, getAllDeveloperById, getAllDevelopers, getAllProjectsByDevId} from './logics/developers.logics'
 import { chekDevEmail, chekDevID } from './middlewares/developers.middlewares'
 import { createDevInfo } from './logics/devInfo.logics'
 import { checkDevInfoId } from './middlewares/devInfo.middlewares'
@@ -21,6 +21,8 @@ app.post('/developers', chekDevEmail, createNewDev);
 app.get('/developers', getAllDevelopers);
 app.get('/developers/:id', chekDevID, getAllDeveloperById);
 app.get('/developers/:id/projects', chekDevID, getAllProjectsByDevId)
+app.patch('/developers/:id', chekDevID, editDeveloper)
+
 
 //table: developers_info
 app.post('/developers/:id/infos', chekDevID, checkDevInfoId, createDevInfo);
