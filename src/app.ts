@@ -1,10 +1,10 @@
 import express, { Application } from 'express';
 import { startDataBase } from './database';
-import { createNewDev, getAllDeveloperById, getAllDevelopers } from './logics/developers.logics'
+import { createNewDev, getAllDeveloperById, getAllDevelopers, getAllProjectsByDevId} from './logics/developers.logics'
 import { chekDevEmail, chekDevID } from './middlewares/developers.middlewares'
 import { createDevInfo } from './logics/devInfo.logics'
 import { checkDevInfoId } from './middlewares/devInfo.middlewares'
-import { createNewProject, insertNewTech } from './logics/projects.logics'
+import { createNewProject, getAllProjects, getProjectsById, insertNewTech } from './logics/projects.logics'
 import { checkDevIdForNewProject, checkProjectId} from './middlewares/projects.middlewares'
 
 
@@ -19,7 +19,8 @@ app.listen(3000, async () => {
 //table: developers
 app.post('/developers', chekDevEmail, createNewDev);
 app.get('/developers', getAllDevelopers);
-app.get('/developers/:id', chekDevID, getAllDeveloperById)
+app.get('/developers/:id', chekDevID, getAllDeveloperById);
+app.get('/developers/:id/projects', chekDevID, getAllProjectsByDevId)
 
 //table: developers_info
 app.post('/developers/:id/infos', chekDevID, checkDevInfoId, createDevInfo);
@@ -27,4 +28,7 @@ app.post('/developers/:id/infos', chekDevID, checkDevInfoId, createDevInfo);
 //talbe: projects
 app.post('/projects', checkDevIdForNewProject, createNewProject);
 app.post('/projects/:id/technologies', checkProjectId, insertNewTech );
+app.get('/projects', getAllProjects );
+app.get('/projects/:id', checkProjectId, getProjectsById );
+
 

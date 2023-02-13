@@ -88,7 +88,7 @@ const getAllDevelopers = async (req: Request, res:Response): Promise<Response> =
             dev.name AS "developerName",
             dev.email AS "developerEmail",
             di.id AS "developerInfoId",
-            di."developerSince" AS "developerInfoDeveloperSince",
+            to_char(di."developerSince", 'YYYY/MM/DD') AS "developerInfoDeveloperSince",
             di."preferredOS" AS "developerInfopreferredOS"
         FROM 
             developers dev
@@ -111,7 +111,7 @@ const getAllDeveloperById = async (req: Request, res:Response): Promise<Response
             dev.name AS "developerName",
             dev.email AS "developerEmail",
             di.id AS "developerInfoId",
-            di."developerSince" AS "developerInfoDeveloperSince",
+            to_char(di."developerSince", 'YYYY/MM/DD') AS "developerInfoDeveloperSince",
             di."preferredOS" AS "developerInfopreferredOS"
         FROM 
             developers dev
@@ -131,4 +131,64 @@ const getAllDeveloperById = async (req: Request, res:Response): Promise<Response
     return res.status(200).json(queryResult.rows)
 }
 
-export { createNewDev, getAllDevelopers, getAllDeveloperById }
+const getAllProjectsByDevId = async (req: Request, res:Response): Promise<Response> => { 
+    // "developerID": 1,
+    // "developerName": "Fabio",
+    // "developerEmail": "fabio.jr@kenzie.com.br",
+    // "developerInfoID": 2,
+    // "developerInfoDeveloperSince": "2013-01-01T02:00:00.000Z",
+    // "developerInfoPreferredOS": "Linux",
+    // "projectID": 1,
+    // "projectName": "Projeto 1",
+    // "projectDescription": "Projeto fullstack",
+    // "projectEstimatedTime": "2 dias",
+    // "projectRepository": "url.com.br",
+    // "projectStartDate": "2023-02-13T03:00:00.000Z",
+    // "projectEndDate": null,
+    // "technologyId": 1,
+    // "technologyName": "JavaScript"
+    const queryString: string = `
+    SELECT 
+        dev.id AS "developerID",
+        dev.name AS "developerName",
+        dev.email AS "developerEmail",
+        dev.email AS "developerEmail",
+        dev."developerInfoId" AS "developerInfoID",
+        to_char(di."developerSince", 'YYYY/MM/DD') AS "developerInfoSince",
+        di."preferredOS" AS "developerInfoPreferredOS",
+        pr.id AS "projectID",
+        pr.name AS "projectName",
+        pr.description AS "projectDescription",
+        pr."estimatedTime" AS "projectEstimatedTime",
+        pr.repository AS "projectRepository",
+        to_char(pr."startDate", 'YYYY/MM/DD') AS "projectStartDate",
+        to_char(pr."endDate", 'YYYY/MM/DD') AS "projectEndDate",
+        pr."developerId" AS "projectDeveloperID",
+        pr."developerId" AS "projectDeveloperID",
+        te.id AS "technologyID",
+        te.name AS "technologyName"
+    FROM
+        projects pr
+    LEFT JOIN
+        projects_technologies pt ON pt."projectId" = pr.id
+    LEFT JOIN
+        technologies te ON te.id = pt."technologyId"
+    LEFT JOIN
+        developers dev ON dev.id = pr."developerId"
+    LEFT JOIN
+        developers_info di ON di.id = dev."developerInfoId"
+    WHERE
+        pr."developerId" = $1;
+    `
+
+    const queryConfig: QueryConfig = {
+        text: queryString,
+        values:[Number(req.params.id)]
+    }
+
+    const queryResult = await client.query(queryConfig)
+
+    return res.status(200).json(queryResult.rows)
+}
+
+export { createNewDev, getAllDevelopers, getAllDeveloperById, getAllProjectsByDevId }
