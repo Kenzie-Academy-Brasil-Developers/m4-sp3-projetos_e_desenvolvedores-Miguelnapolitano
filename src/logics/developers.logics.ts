@@ -177,7 +177,7 @@ const getAllProjectsByDevId = async (req: Request, res:Response): Promise<Respon
     return res.status(200).json(queryResult.rows)
 }
 
-const validatePatchRequest = async (payload: any, res: Response): Promise<Response | iDeveloperRequestPatch | undefined> => {
+const validatePatchRequest = async (payload: any): Promise<Response | iDeveloperRequestPatch | undefined> => {
     const requestData: iDeveloperRequest = payload;
 
     const requestKeys: Array<string> = Object.keys(requestData);
@@ -193,17 +193,17 @@ const validatePatchRequest = async (payload: any, res: Response): Promise<Respon
     if(requestKeys.includes("email")){
         const queryString: string =`
             SELECT * FROM developers WHERE email = $1;
-        `
-
+        `        
         const queryConfig: QueryConfig = {
             text: queryString,
             values: [requestData.email]
         }
 
-        const queryResult: developerResult = await client.query(queryConfig)
+        const queryResult: developerResult = await client.query(queryConfig);
 
-        if (queryResult.rows){
-            return res.status(404).json('Email alredy exist.')
+        if (queryResult.rows[0]){
+
+            throw new Error('Email alredy exist.')
         }
     }
 
@@ -228,12 +228,14 @@ const validatePatchRequest = async (payload: any, res: Response): Promise<Respon
             return patchDev
         }
     return requestData
-}}
+}
+}
 
-const editDeveloper = async (req: Request, res:Response): Promise<Response | undefined> => {
+const editDeveloper = async (req: Request, res:Response): Promise<Response> => {
     try{
-        const requestData = validatePatchRequest(req.body, res);        
-         if( requestData != undefined){
+        const requestData = await validatePatchRequest(req.body);        
+         
+        if( requestData != undefined){
 
              const queryString: string = format (`
              UPDATE
