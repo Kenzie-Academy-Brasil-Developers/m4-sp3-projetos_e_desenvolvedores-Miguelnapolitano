@@ -4,7 +4,7 @@ import { createNewDev, deleteDeveloper, editDeveloper, getAllDeveloperById, getA
 import { chekDevEmail, chekDevID } from './middlewares/developers.middlewares';
 import { createDevInfo, editDevIndo } from './logics/devInfo.logics';
 import { checkDevInfoId } from './middlewares/devInfo.middlewares';
-import { createNewProject, deleteTech, editProjectsById, getAllProjects, getProjectsById, insertNewTech } from './logics/projects.logics';
+import { createNewProject, deleteProject, deleteTech, editProjectsById, getAllProjects, getProjectsById, insertNewTech } from './logics/projects.logics';
 import { checkDevIdForNewProject, checkProjectId, checkRelationship} from './middlewares/projects.middlewares';
 
 
@@ -36,5 +36,6 @@ app.get('/projects', getAllProjects );
 app.get('/projects/:id', checkProjectId, getProjectsById );
 app.patch('/projects/:id', checkProjectId, editProjectsById );
 app.delete('/projects/:id/technologies/:name', checkProjectId, checkRelationship,  deleteTech);
+app.delete('/projects/:id', checkProjectId, deleteProject )
 
 
