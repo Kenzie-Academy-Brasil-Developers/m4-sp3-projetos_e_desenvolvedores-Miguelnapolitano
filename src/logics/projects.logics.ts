@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { QueryConfig, QueryResult } from 'pg';
 import format from 'pg-format';
 import { client } from '../database';
-import { iInsertTechnology, iInsertTechnologyRequest, insertTechnologyResult, iPagination, iProjectsRequest, iTechnologyRequest, paginationResult, projectResult, technologyResult } from '../interfaces/projects.interfaces'
+import { iInsertTechnology, iInsertTechnologyRequest, insertTechnologyResult, iPagination, iProjectsRequest, iProjectsRequestPatch, iTechnologyRequest, paginationResult, projectResult, technologyResult } from '../interfaces/projects.interfaces'
 
 const validadeRequestNewProject = (payload: any): iProjectsRequest => {
     const requestData: iProjectsRequest = payload;
@@ -297,5 +297,61 @@ const getProjectsById = async (req: Request, res:Response): Promise<Response> =>
     return res.status(200).json(queryResult.rows)
 }
 
+const validadeRequestProjectPatch = (payload: any): iProjectsRequestPatch => {
+    
+    const requestKeys: Array<string> = Object.keys(payload)
 
-export { createNewProject, insertNewTech, getAllProjects, getProjectsById}
+    const requiredKeys: Array<string> = ["name", "description", "estimatedTime", "repository", "startDate", "endDate", "developerId"]
+
+    const requestContainsRequiredKeys: boolean = requiredKeys.some((key: string) => requestKeys.includes(key))
+
+    if(!requestContainsRequiredKeys){
+        throw new Error('At least one of those keys must be send: "name","description","estimatedTime","repository","startDate","endDate" or "developerId".')
+    }
+
+    const allowedKeysInRequest: Array<string> = requestKeys.filter((key: string) => requiredKeys.includes(key))
+    
+    const projectPatch: any = {}
+
+    allowedKeysInRequest.forEach((key: string) => { 
+        projectPatch[key] = payload[key]
+     })
+
+    return projectPatch
+}
+
+const editProjectsById = async (req: Request, res:Response): Promise<Response> => {
+    try{
+        const requestData: iProjectsRequestPatch = validadeRequestProjectPatch(req.body)
+
+        const queryString: string = format (`
+             UPDATE
+                 projects
+             SET (%I) = ROW(%L)
+             WHERE
+                 id = $1
+             RETURNING *;
+             `,
+             Object.keys(requestData),
+             Object.values(requestData)
+             )
+     
+             const queryConfig: QueryConfig = {
+                 text: queryString,
+                 values: [req.params.id]
+             }
+
+             const queryResult: projectResult = await client.query(queryConfig);
+
+        return res.status(200).json(queryResult.rows[0]);
+
+    }catch(error){
+        if(error instanceof Error){
+            return res.status(400).json({message: error.message});
+        }
+        return res.status(500).json('Internal server error.');
+    }
+}
+
+
+export { createNewProject, insertNewTech, getAllProjects, getProjectsById, editProjectsById}

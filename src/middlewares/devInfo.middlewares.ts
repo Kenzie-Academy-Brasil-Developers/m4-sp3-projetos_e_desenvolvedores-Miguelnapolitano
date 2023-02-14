@@ -25,6 +25,7 @@ const checkDevInfoId = async (req: Request, res:Response, next: NextFunction): P
     const queryResult: developerResult = await client.query(queryConfig);
     
     if (queryResult.rows[0].developerInfoId){
+
         return res.status(400).json('Developer infos already exists.')
         
     }

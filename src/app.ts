@@ -2,9 +2,9 @@ import express, { Application } from 'express';
 import { startDataBase } from './database';
 import { createNewDev, editDeveloper, getAllDeveloperById, getAllDevelopers, getAllProjectsByDevId} from './logics/developers.logics'
 import { chekDevEmail, chekDevID } from './middlewares/developers.middlewares'
-import { createDevInfo } from './logics/devInfo.logics'
+import { createDevInfo, editDevIndo } from './logics/devInfo.logics'
 import { checkDevInfoId } from './middlewares/devInfo.middlewares'
-import { createNewProject, getAllProjects, getProjectsById, insertNewTech } from './logics/projects.logics'
+import { createNewProject, editProjectsById, getAllProjects, getProjectsById, insertNewTech } from './logics/projects.logics'
 import { checkDevIdForNewProject, checkProjectId} from './middlewares/projects.middlewares'
 
 
@@ -26,11 +26,13 @@ app.patch('/developers/:id', chekDevID, editDeveloper)
 
 //table: developers_info
 app.post('/developers/:id/infos', chekDevID, checkDevInfoId, createDevInfo);
+app.patch('/developers/:id/infos', chekDevID, editDevIndo);
 
 //talbe: projects
 app.post('/projects', checkDevIdForNewProject, createNewProject);
 app.post('/projects/:id/technologies', checkProjectId, insertNewTech );
 app.get('/projects', getAllProjects );
 app.get('/projects/:id', checkProjectId, getProjectsById );
+app.patch('/projects/:id', checkProjectId, editProjectsById );
 
 

@@ -52,4 +52,14 @@ interface iPagination{
 
 type paginationResult = QueryResult<iPagination>
 
-export { iProjectsRequest, projectResult,iTechnologyRequest, technologyResult, iInsertTechnologyRequest, insertTechnologyResult, iInsertTechnology, iPagination, paginationResult };
+interface iProjectsRequestPatch {
+    name?: string,
+    description?: string,
+    estimatedTime?: string,
+    repository?: string,
+    startDate?: string,
+    endDate?: string,
+    developerId?: number
+};
+
+export { iProjectsRequest, projectResult,iTechnologyRequest, technologyResult, iInsertTechnologyRequest, insertTechnologyResult, iInsertTechnology, iPagination, paginationResult, iProjectsRequestPatch };

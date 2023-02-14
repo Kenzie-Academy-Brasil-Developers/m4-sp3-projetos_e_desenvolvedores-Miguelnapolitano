@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import { QueryConfig } from "pg";
 import format from "pg-format";
 import { client } from "../database";
-import { iInfoRequest, infoResult } from "../interfaces/devInfo.interfaces";
+import { developerResult } from "../interfaces/developers.interfaces";
+import { iInfoRequest, iInfoRequestPatch, infoResult } from "../interfaces/devInfo.interfaces";
 
 const validadeRequest = (payload: any): iInfoRequest => {
     const requestData: iInfoRequest = payload;
@@ -87,4 +88,84 @@ const createDevInfo = async (req: Request, res:Response): Promise<Response> => {
     })
 }}
 
-export { createDevInfo}
+const validadeRequestToEditInfo = async (payload: any): Promise<iInfoRequestPatch> => {
+    const requestData = payload;
+
+    const requestKeys: Array<string> = Object.keys(requestData);
+
+    if(!(requestKeys.some((key: string) => key == "preferredOS" || key == "developerSince"))){
+        throw new Error('At least one of keys "preferredOS" or "developerSince" must be send.')
+    }else if(requestKeys.some((key: string) => key == "preferredOS") && (requestKeys.some((key: string) => key == "developerSince"))){
+        
+        if(!(requestData.preferredOS == "Linux" || requestData.preferredOS == "Windows" || requestData.preferredOS =="MacOS")){
+            throw new Error('The only suported options for "preferredOS" are: "Linux", "Windows" or "MacOS".')
+        }
+        const newPatch = {
+            preferredOS: requestData.preferredOS,
+            developerSince: requestData.developerSince
+        }
+        return newPatch
+    }else if (requestKeys.some((key: string) => key == "preferredOS")){
+        if(!(requestData.preferredOS == "Linux" || requestData.preferredOS == "Windows" || requestData.preferredOS =="MacOS")){
+            throw new Error('The only suported options for "preferredOS" are: "Linux", "Windows" or "MacOS".')
+        }
+        const newPatch = {
+            preferredOS: requestData.preferredOS
+        }
+        return newPatch
+    }else if (requestKeys.some((key: string) => key == "developerSince")){
+        const newPatch = {
+            developerSince: requestData.developerSince
+        }
+        return newPatch
+    }
+    
+    return payload
+}
+
+const editDevIndo = async (req: Request, res:Response): Promise<Response> => {
+    try{
+        const requestData = await validadeRequestToEditInfo(req.body);
+
+        const queryStringForInfoId: string = `
+            SELECT
+                *
+            FROM
+                developers
+            WHERE
+                id = $1
+        `
+
+        const queryConfigForInfoId: QueryConfig = {
+            text: queryStringForInfoId,
+            values:[req.params.id]
+        }
+        
+        const queryResultForInfoId: developerResult = await client.query(queryConfigForInfoId);
+
+        const developerInfoId: number = Number(queryResultForInfoId.rows[0].developerInfoId);
+
+        const queryStringToPatchInfo: string = format(`
+            UPDATE
+                developers_info
+            SET (%I) = ROW (%L)
+            WHERE
+                id = (%L)
+            RETURNING *
+        `, Object.keys(requestData),
+            Object.values(requestData),
+            developerInfoId);
+        
+        const queryResultToPatchInfo = await client.query(queryStringToPatchInfo);
+
+        return res.status(200).json(queryResultToPatchInfo.rows[0])
+
+    }catch(error){
+        if(error instanceof Error){
+            return res.status(400).json({message: error.message})
+        }
+        return res.status(500).json('Internal server error')
+    }
+}
+
+export { createDevInfo, editDevIndo}
