@@ -270,5 +270,20 @@ const editDeveloper = async (req: Request, res:Response): Promise<Response | und
     })
 }}
 
+const deleteDeveloper = async (req: Request, res:Response): Promise<Response> => {
 
-export { createNewDev, getAllDevelopers, getAllDeveloperById, getAllProjectsByDevId, editDeveloper }
+    const queryString: string = `
+    DELETE FROM developers WHERE id = $1
+    ` 
+    const queryConfig: QueryConfig = {
+        text: queryString,
+        values: [req.params.id]
+    }
+
+    await client.query(queryConfig);
+
+    return res.status(204).json()
+
+}
+
+export { createNewDev, getAllDevelopers, getAllDeveloperById, getAllProjectsByDevId, editDeveloper, deleteDeveloper }

@@ -353,5 +353,50 @@ const editProjectsById = async (req: Request, res:Response): Promise<Response> =
     }
 }
 
+const deleteTech = async (req: Request, res:Response): Promise<Response> => {
+    const queryString: string = `
+    SELECT 
+        *
+    FROM technologies
+    WHERE name = $1
+    `
 
-export { createNewProject, insertNewTech, getAllProjects, getProjectsById, editProjectsById}
+    const queryConfig: QueryConfig = {
+        text: queryString,
+        values: [req.params.name]
+    }
+
+    const queryResult: technologyResult = await client.query(queryConfig);
+
+    const techId: number = Number(queryResult.rows[0].id);
+
+    const queryStringForCheck: string = `
+    SELECT 
+        *
+    FROM projects_technologies
+    WHERE "technologyId" = $1 AND "projectId" = $2;    
+    `
+
+    const queryConfigForCheck: QueryConfig = {
+        text: queryStringForCheck,
+        values: [techId, req.params.id]
+    }
+
+    const queryResultForCheck: insertTechnologyResult = await client.query(queryConfigForCheck);
+
+    const relId: number = Number(queryResultForCheck.rows[0].id);
+    
+    const queryStringForDelete: string = `
+        DELETE FROM projects_technologies WHERE id = $1
+    `
+    const queryConfigForDelete: QueryConfig = {
+        text: queryStringForDelete,
+        values: [relId]
+    }
+
+    await client.query(queryConfigForDelete);
+
+    return res.status(204).json()
+}
+
+export { createNewProject, insertNewTech, getAllProjects, getProjectsById, editProjectsById, deleteTech}
