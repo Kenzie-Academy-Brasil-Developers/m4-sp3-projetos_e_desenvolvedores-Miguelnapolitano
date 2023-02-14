@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, text } from 'express';
 import { QueryConfig, QueryResult } from 'pg';
 import format from 'pg-format';
 import { client } from '../database';
@@ -399,4 +399,20 @@ const deleteTech = async (req: Request, res:Response): Promise<Response> => {
     return res.status(204).json()
 }
 
-export { createNewProject, insertNewTech, getAllProjects, getProjectsById, editProjectsById, deleteTech}
+const deleteProject = async (req: Request, res:Response): Promise<Response> => {
+
+    const queryString: string = `
+     DELETE FROM projects WHERE id = $1
+    `;
+
+    const queryConfig: QueryConfig = {
+        text: queryString,
+        values:[req.params.id]
+    };
+
+    await client.query(queryConfig)
+
+    return res.status(204).json()
+}
+
+export { createNewProject, insertNewTech, getAllProjects, getProjectsById, editProjectsById, deleteTech, deleteProject}
