@@ -11,4 +11,9 @@ interface iInfo extends iInfoRequest {
 
 type infoResult = QueryResult<iInfo>;
 
-export { iInfoRequest ,iInfo, infoResult };
+interface iInfoRequestPatch {
+    developerSince?: string,
+    preferredOS?: 'Windows' | 'Linux' | 'MacOS';
+};
+
+export { iInfoRequest ,iInfo, infoResult, iInfoRequestPatch };

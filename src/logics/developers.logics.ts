@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { request, Request, Response } from 'express';
 import { QueryConfig } from 'pg';
 import format from 'pg-format';
 import { client } from '../database';
@@ -177,7 +177,7 @@ const getAllProjectsByDevId = async (req: Request, res:Response): Promise<Respon
     return res.status(200).json(queryResult.rows)
 }
 
-const validatePatchRequest = async (payload: any): Promise<Response | iDeveloperRequestPatch | undefined> => {
+const validatePatchRequest = async (payload: any): Promise<Response | iDeveloperRequestPatch | undefined> => { 
     const requestData: iDeveloperRequest = payload;
 
     const requestKeys: Array<string> = Object.keys(requestData);
@@ -190,7 +190,10 @@ const validatePatchRequest = async (payload: any): Promise<Response | iDeveloper
         throw new Error('At least one of keys "name" or "email" must be send.')
     }
 
-    if(requestKeys.includes("email")){
+    const requestContainsOnlyRequiredKeys: boolean = requestKeys.every((key: string) => requiredKeys.includes(key)); 
+
+    if(requestKeys.includes("email")){        
+        
         const queryString: string =`
             SELECT * FROM developers WHERE email = $1;
         `        
@@ -202,36 +205,33 @@ const validatePatchRequest = async (payload: any): Promise<Response | iDeveloper
         const queryResult: developerResult = await client.query(queryConfig);
 
         if (queryResult.rows[0]){
-
             throw new Error('Email alredy exist.')
-        }
-    }
-
-    const requestContainsOnlyRequiredKeys: boolean = requestKeys.every((key: string) => requiredKeys.includes(key));    
+        }   
                   
-    if (!requestContainsOnlyRequiredKeys){        
-       if (requestKeys.includes("name") && requestKeys.includes("email")){
-            const patchDev = {
-                name: requestData.name,
-                email: requestData.email,
-            }            
-            return patchDev
-       }else if (requestKeys.includes("name")){
-            const patchDev = {
-                name: requestData.name
+        if (!requestContainsOnlyRequiredKeys){        
+            if (requestKeys.includes("name")){
+                    const patchDev = {
+                        name: requestData.name,
+                        email: requestData.email,
+                    }            
+                    return patchDev
+            }else{
+                const patchDev = {
+                    email: requestData.email
+                }
+                return patchDev
             }
-            return patchDev
-       }else if (requestKeys.includes("email")){
-            const patchDev = {
-                email: requestData.email
-            }
-            return patchDev
         }
+    }else {
+        const patchDev = {
+            name: requestData.name
+        }
+        return patchDev
+    }
     return requestData
 }
-}
 
-const editDeveloper = async (req: Request, res:Response): Promise<Response> => {
+const editDeveloper = async (req: Request, res:Response): Promise<Response | undefined> => {
     try{
         const requestData = await validatePatchRequest(req.body);        
          
@@ -270,5 +270,20 @@ const editDeveloper = async (req: Request, res:Response): Promise<Response> => {
     })
 }}
 
+const deleteDeveloper = async (req: Request, res:Response): Promise<Response> => {
 
-export { createNewDev, getAllDevelopers, getAllDeveloperById, getAllProjectsByDevId, editDeveloper }
+    const queryString: string = `
+    DELETE FROM developers WHERE id = $1
+    ` 
+    const queryConfig: QueryConfig = {
+        text: queryString,
+        values: [req.params.id]
+    }
+
+    await client.query(queryConfig);
+
+    return res.status(204).json()
+
+}
+
+export { createNewDev, getAllDevelopers, getAllDeveloperById, getAllProjectsByDevId, editDeveloper, deleteDeveloper }
