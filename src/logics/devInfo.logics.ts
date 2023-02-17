@@ -8,8 +8,6 @@ import { iInfoRequest, iInfoRequestPatch, infoResult } from "../interfaces/devIn
 const validadeRequest = (payload: any): iInfoRequest => {
     const requestData: iInfoRequest = payload;
 
-    enum preferredOSEnum {'Windows', 'Linux', 'MacOS'}
-
     const requestKeys: Array<string> = Object.keys(requestData);
 
     const requiredKeys: Array<string> = ["developerSince", "preferredOS"];
@@ -23,19 +21,12 @@ const validadeRequest = (payload: any): iInfoRequest => {
     const requestContainsOnlyRequiredKeys: boolean = requestKeys.every((key: string) => requiredKeys.includes(key))
     
     if (!requestContainsOnlyRequiredKeys){
-        if (requestData.preferredOS in preferredOSEnum){
             const newDev = {
              developerSince: requestData.developerSince, 
              preferredOS: requestData.preferredOS
             } 
             return newDev
         }
-        throw new Error('message: Invalid OS option. Options: [ Windows, Linux, MacOS ]')
-    }
-    
-    if(!(requestData.preferredOS in preferredOSEnum)){
-        throw new Error('message: Invalid OS option. Options: [ Windows, Linux, MacOS ]')
-    }
 
     return requestData
 }
@@ -77,11 +68,14 @@ const createDevInfo = async (req: Request, res:Response): Promise<Response> => {
 
         return res.status(201).json(queryResult.rows[0])
 
-    }catch(error){
+    }catch(error: unknown){
         if(error instanceof Error){
-            return res.status(400).json({
-              message: error.message,
-            });
+
+        if(error.message.includes('invalid input value for enum os')){
+            return res.status(400).json({message: 'Invalid OS option.', Options: [ 'Windows', 'Linux', 'MacOS' ]})
+        }else{
+            return res.status(400).json({message: error.message})
+        }        
     }
     return res.status(500).json({
         message: 'Internal server error'
@@ -98,7 +92,7 @@ const validadeRequestToEditInfo = async (payload: any): Promise<iInfoRequestPatc
     }else if(requestKeys.some((key: string) => key == "preferredOS") && (requestKeys.some((key: string) => key == "developerSince"))){
         
         if(!(requestData.preferredOS == "Linux" || requestData.preferredOS == "Windows" || requestData.preferredOS =="MacOS")){
-            throw new Error('The only suported options for "preferredOS" are: "Linux", "Windows" or "MacOS".')
+            throw new Error
         }
         const newPatch = {
             preferredOS: requestData.preferredOS,
@@ -162,7 +156,8 @@ const editDevIndo = async (req: Request, res:Response): Promise<Response> => {
 
     }catch(error){
         if(error instanceof Error){
-            return res.status(400).json({message: error.message})
+            return res.status(400).json({message: error.message,
+            options: ["Windows", "Linux", "MacOS"]})
         }
         return res.status(500).json('Internal server error')
     }

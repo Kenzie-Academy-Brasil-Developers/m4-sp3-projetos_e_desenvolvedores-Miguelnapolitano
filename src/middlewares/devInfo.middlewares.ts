@@ -26,7 +26,7 @@ const checkDevInfoId = async (req: Request, res:Response, next: NextFunction): P
     
     if (queryResult.rows[0].developerInfoId){
 
-        return res.status(400).json('Developer infos already exists.')
+        return res.status(400).json({message: 'Developer infos already exists.'})
         
     }
 

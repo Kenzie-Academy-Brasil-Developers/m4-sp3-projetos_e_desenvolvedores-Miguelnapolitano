@@ -12,6 +12,7 @@ CREATE TABLE developers (
 	"email" VARCHAR(50) NOT NULL,
 	"developerInfoId" INTEGER UNIQUE,
 	FOREIGN KEY ("developerInfoId") REFERENCES developers_info("id")
+	ON DELETE CASCADE
 	);
 
 CREATE TABLE projects (

@@ -23,7 +23,7 @@ const chekDevEmail = async (req: Request, res: Response, next: NextFunction): Pr
     const queryResult: developerResult = await client.query(queryConfig)
 
     if(queryResult.rows[0]){
-        return res.status(409).json('Email alredy exists.')
+        return res.status(409).json({message:'Email alredy exists.'})
     }
 
     next()
@@ -49,7 +49,7 @@ const chekDevID = async (req: Request, res: Response, next: NextFunction): Promi
     const queryResult: developerResult = await client.query(queryConfig)
 
     if(!queryResult.rows[0]){
-        return res.status(404).json(`Developer ID: ${devId} do not exists.`)
+        return res.status(404).json({message: `Developer not found`})
     }
 
     next()

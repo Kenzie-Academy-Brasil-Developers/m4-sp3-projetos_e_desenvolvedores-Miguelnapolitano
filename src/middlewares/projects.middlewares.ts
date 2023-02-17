@@ -25,7 +25,7 @@ const checkDevIdForNewProject = async (req: Request, res:Response, next: NextFun
     const queryResult: projectResult = await client.query(queryConfig);
     
     if (!queryResult.rows[0]){
-        return res.status(404).json('Developer not found.')        
+        return res.status(404).json({message: 'Developer not found.'})        
     }
 
     return next()
@@ -51,13 +51,33 @@ const checkProjectId = async (req: Request, res:Response, next: NextFunction): P
     const queryResult: projectResult = await client.query(queryConfig);
 
     if (!queryResult.rows[0]){
-        return res.status(404).json(`Project ID: ${projectId} does not exists`)
+        return res.status(404).json({message: `Project not found`})
     }
 
     next()
 }
 
 const checkRelationship = async (req: Request, res:Response, next: NextFunction): Promise<Response | void> => {
+    
+    enum nameTechsEnum { 'JavaScript', 'Python', 'React', 'Express.js', 'HTML', 'CSS', 'Django', 'PostgreSQL', 'MongoDB'}
+
+    if (!(req.params.name in nameTechsEnum)){
+        return res.status(404).json({message: 'Technology not supported.',
+        options: [
+            'JavaScript',
+            'Python',
+            'React',
+            'Express.js',
+            'HTML',
+            'CSS',
+            'Django',
+            'PostgreSQL',
+            'MongoDB'
+        ]
+    })
+    }
+
+    
     const queryString: string = `
     SELECT 
         *
@@ -73,7 +93,7 @@ const checkRelationship = async (req: Request, res:Response, next: NextFunction)
     const queryResult: technologyResult = await client.query(queryConfig)
 
     if(!queryResult.rows[0]){
-       return res.status(404).json(`Technology name: ${req.params.name} does not exist.`)
+       return res.status(404).json({message: `Technology "${req.params.name}" not found on this Project.`})
     }
     const techId: number = Number(queryResult.rows[0].id);
 
@@ -92,7 +112,7 @@ const checkRelationship = async (req: Request, res:Response, next: NextFunction)
     const queryResultForCheck: insertTechnologyResult = await client.query(queryConfigForCheck);
 
     if(!queryResultForCheck.rows[0]){
-        return res.status(404).json(`Technology ${req.params.name} not found in Project ID: ${req.params.id}.`)
+        return res.status(404).json({message: `Technology "${req.params.name}" not found on this Project.`})
     }
 
     next();
