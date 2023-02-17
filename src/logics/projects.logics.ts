@@ -86,7 +86,7 @@ const validadeRequestNewTech = (payload: any): iTechnologyRequest => {
     enum nameTechsEnum { 'JavaScript', 'Python', 'React', 'Express.js', 'HTML', 'CSS', 'Django', 'PostgreSQL', 'MongoDB'}
 
     if (!(requestData.name in nameTechsEnum)){
-        throw new Error('The only supported technologies are: JavaScript, Python, React, Express.js, HTML, CSS, Django, PostgreSQL, MongoDB')
+        throw new Error('Technology not supported')
     }
 
     const requestContainsOnlyRequiredKeys: boolean = requestKeys.every((key: string) => key == "name")
@@ -229,6 +229,21 @@ const insertNewTech = async (req: Request, res:Response): Promise<Response> => {
 
     }catch(error){
         if (error instanceof Error){
+            if (error.message.includes('Technology not supported')){
+                return res.status(400).json({message: 'Technology not supported.',
+                options: [
+                    'JavaScript',
+                    'Python',
+                    'React',
+                    'Express.js',
+                    'HTML',
+                    'CSS',
+                    'Django',
+                    'PostgreSQL',
+                    'MongoDB'
+                ]
+            })
+            }
             return res.status(400).json({message: error.message})
         }
         return res.status(500).json('Internal server error')
@@ -353,7 +368,10 @@ const editProjectsById = async (req: Request, res:Response): Promise<Response> =
     }
 }
 
+
 const deleteTech = async (req: Request, res:Response): Promise<Response> => {
+
+
     const queryString: string = `
     SELECT 
         *
