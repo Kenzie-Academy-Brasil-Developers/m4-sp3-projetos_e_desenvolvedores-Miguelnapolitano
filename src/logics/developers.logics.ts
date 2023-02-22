@@ -294,21 +294,37 @@ const deleteDeveloper = async (req: Request, res:Response): Promise<Response> =>
         }
     
         const queryResult: developerResult = await client.query(queryConfig);
+
+        if(queryResult.rows[0].developerInfoId){
+            const devInfoId: number = Number(queryResult.rows[0].developerInfoId)
     
-        const devInfoId: number = Number(queryResult.rows[0].developerInfoId)
-    
+            const queryStringForDelete: string = `
+                DELETE FROM developers_info WHERE id = $1
+            `
+        
+            const queryConfigForDelete: QueryConfig = {
+                text: queryStringForDelete,
+                values: [devInfoId]
+            }
+        
+            client.query(queryConfigForDelete)
+        
+            return res.status(204).json()
+        }
+
         const queryStringForDelete: string = `
-            DELETE FROM developers_info WHERE id = $1
+            DELETE FROM developers WHERE id = $1
         `
     
         const queryConfigForDelete: QueryConfig = {
             text: queryStringForDelete,
-            values: [devInfoId]
+            values: [req.params.id]
         }
     
         client.query(queryConfigForDelete)
     
-        return res.status(204).json()
+        return res.status(204).json()  
+        
 
     }catch(error){
         if(error instanceof Error){
